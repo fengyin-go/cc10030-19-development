@@ -86,13 +86,20 @@ def get_entry(module: str, entry_id: int) -> dict[str, Any]:
 def create_entry(module: str, payload: EntryPayload) -> ActionResult:
     service = require_service(module)
     entry, missing = service.create_entry(payload.values)
-    if missing:
-        return ActionResult(ok=False, message=f"缺少必填字段：{'、'.join(missing)}")
+    if entry is None:
+        # 领域服务既可能返回缺失字段列表，也可能直接返回一句业务拒绝原因。
+        detail = missing if isinstance(missing, str) else f"缺少必填字段：{'、'.join(missing)}"
+        return ActionResult(ok=False, message=detail)
     return ActionResult(ok=True, message=f"{service.ENTITY}已登记", entry=entry)
 
 
 @router.post("/{module}/{entry_id}/actions", response_model=ActionResult)
 def run_action(module: str, entry_id: int, payload: ActionPayload) -> ActionResult:
     service = require_service(module)
-    entry, message = service.run_action(entry_id, payload.action.strip())
+    # 需要附带数值的动作（例如调整数量）走扩展入口，其它模块保持原签名。
+    if payload.values and hasattr(service, "run_action_with_values"):
+        entry, message = service.run_action_with_values(
+            entry_id, payload.action.strip(), payload.values)
+    else:
+        entry, message = service.run_action(entry_id, payload.action.strip())
     return ActionResult(ok=entry is not None, message=message, entry=entry)

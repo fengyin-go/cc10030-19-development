@@ -22,6 +22,7 @@ from app.services.maintenance import MaintenanceService
 from app.services.crew_cert import CrewCertService
 from app.services.dispatch_note import DispatchNoteService
 from app.services.tariff import TariffService
+from app.services.stowage import StowageService
 
 SERVICES: dict[str, BaseModuleService] = {
     "vessel": VesselService(),
@@ -44,6 +45,7 @@ SERVICES: dict[str, BaseModuleService] = {
     "crew_cert": CrewCertService(),
     "dispatch_note": DispatchNoteService(),
     "tariff": TariffService(),
+    "stowage_batch": StowageService(),
 }
 
 
